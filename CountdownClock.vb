@@ -1,4 +1,4 @@
-﻿' Countdown Clock Copyright 2017-2026 Paul David Buchan (pdbuchan@gmail.com)
+' Countdown Clock Copyright 2017-2026 Paul David Buchan (pdbuchan@gmail.com)
 ' SPDX-License-Identifier: GPL-3.0-or-later
 '
 ' This program is free software: you can redistribute it and/or modify
@@ -12,38 +12,53 @@
 ' GNU General Public License for more details.
 '
 Imports System.Globalization
+Imports System.IO
+Imports System.Windows.Forms
 
 Public Class CountdownClock
     Dim EndDateLocal As DateTime
     Dim EndDateUtc As DateTime
 
+    Public Sub New()
+        InitializeComponent()
+    End Sub
+
     Private Sub CountdownClock_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
         Dim InputFileName, stringReader, DateString, Format As String
-        Dim fileReader As System.IO.StreamReader
         Dim StringArray As String()
-        InputFileName = "EndDate.txt"
+        InputFileName = Path.Combine(AppContext.BaseDirectory, "EndDate.txt")
 
-        'Open file containing end-date and windows form title bar text.
+        'Open file containing end-date and window title-bar text and read its first line.
         Try
-            fileReader = My.Computer.FileSystem.OpenTextFileReader(InputFileName)
-        Catch exc As System.IO.FileNotFoundException
-            MessageBox.Show("Can't find file " & InputFileName & ".", "File not found.", MessageBoxButtons.OK, MessageBoxIcon.Error)
-            End
+            Using fileReader As New StreamReader(InputFileName)
+                stringReader = fileReader.ReadLine()
+            End Using
+        Catch exc As FileNotFoundException
+            MessageBox.Show("Can't find EndDate.txt beside the application.", "File not found.", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Close()
+            Return
         Catch exc As Exception
-            MessageBox.Show(exc.Message)
-            End
+            MessageBox.Show(exc.Message, "Unable to read " & InputFileName, MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Close()
+            Return
         End Try
 
-        'Read line of text from input file.
-        stringReader = fileReader.ReadLine()
+        If stringReader Is Nothing Then
+            MessageBox.Show("EndDate.txt is empty.", "Invalid input file.", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Close()
+            Return
+        End If
 
-        'Parse end-date and window form title bar text from stringReader.
-        StringArray = stringReader.Split(New Char() {","})
+        'Parse end-date and window title-bar text. Split only at the first comma so
+        'the title itself may contain commas.
+        StringArray = stringReader.Split(New Char() {","c}, 2)
+        If StringArray.Length <> 2 Then
+            MessageBox.Show("Format should be yyyy-MM-dd HH:mm:ss,message", "Invalid input file.", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Close()
+            Return
+        End If
         DateString = StringArray(0)
         Me.Text = StringArray(1)
-
-        'Close end-date file.
-        fileReader.Close()
 
         'Convert end date & time string to type DateTime. The value in EndDate.txt
         'is a local wall-clock time, so keep its DateTimeKind as Unspecified until
@@ -54,7 +69,8 @@ Public Class CountdownClock
             MessageBox.Show("Unable to understand date and time from input file. " &
                             "Format should be yyyy-MM-dd HH:mm:ss,message",
                               DateString, MessageBoxButtons.OK, MessageBoxIcon.Error)
-            End
+            Close()
+            Return
         End If
         EndDateLocal = DateTime.SpecifyKind(EndDateLocal, DateTimeKind.Unspecified)
 
@@ -66,14 +82,16 @@ Public Class CountdownClock
                             "because of a daylight-saving time transition. Please choose " &
                             "a different time.",
                             DateString, MessageBoxButtons.OK, MessageBoxIcon.Error)
-            End
+            Close()
+            Return
         End If
         If TimeZoneInfo.Local.IsAmbiguousTime(EndDateLocal) Then
             MessageBox.Show("The end date and time occurs twice in the local time zone " &
                             "because of a daylight-saving time transition. Please choose " &
                             "an unambiguous time.",
                             DateString, MessageBoxButtons.OK, MessageBoxIcon.Error)
-            End
+            Close()
+            Return
         End If
 
         'Convert the local target to an absolute UTC instant. UTC is used to decide

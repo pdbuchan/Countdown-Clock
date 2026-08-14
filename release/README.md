@@ -1,9 +1,8 @@
-# Prebuilt executable
+# Prebuilt Countdown Clock release
 
-This directory contains the prebuilt Windows executable supplied with the Countdown Clock project.
-
-The `EndDate.txt` format is:
+The project targets .NET 10 Windows Forms and was built with Visual Studio Community 2026 on Microsoft Windows 11 Home 25H2 Build 26200.7171.
 
 ```text
-YYYY-MM-DD HH:MM:SS,Message
+Countdown Clock.exe
+EndDate.txt
 ```

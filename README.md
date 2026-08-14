@@ -20,32 +20,53 @@ For example:
 2099-01-01 00:00:00,Retirement Begins In ...
 ```
 
-The date and time are interpreted as **local wall-clock time in the computer's current local time zone**. No time-zone field is required in `EndDate.txt`. The text after the comma is displayed in the program's title bar.
+The date and time are interpreted as **local wall-clock time in the computer's current local time zone**. No time-zone field is required in `EndDate.txt`. The text after the first comma is displayed in the program's title bar; additional commas may appear in that text.
 
 When the file is read, Countdown Clock validates the local date and time and converts it to UTC using the local time-zone rules. A target that falls in a daylight-saving transition gap (an invalid local time) or in a repeated hour (an ambiguous local time) is rejected rather than silently mapped to the wrong instant.
 
-`EndDate.txt` must be in the program's current working directory when the executable is started. When the target instant has been reached, the countdown timer stops.
+`EndDate.txt` is loaded from the same directory as the application. The SDK project automatically copies it to build and publish output. When the target instant has been reached, the countdown timer stops.
 
-## Prebuilt executable
+## Modern .NET project
 
-The prebuilt Windows executable is located in [`release/`](release/):
+The project has been modernized from the traditional .NET Framework 4.8 Visual Basic project format to an **SDK-style Windows Forms project targeting .NET 10** (`net10.0-windows`).
 
-```text
-release/Countdown Clock.exe
-release/Countdown Clock.exe.config
-release/EndDate.txt
-```
+The modernization removes the old `App.config` and `My Project/` machinery. Startup is explicit in [`Program.vb`](Program.vb), while application and assembly settings are kept in the compact SDK-style [`CountdownClock.vbproj`](CountdownClock.vbproj).
+
+The startup code deliberately retains the original Microsoft Sans Serif 8.25-point default font and system-aware DPI mode so that the fixed-size form remains visually close to the original application.
+
+.NET 10 is a Long Term Support release. See Microsoft's [.NET support policy](https://dotnet.microsoft.com/platform/support/policy) and [Windows Forms migration guidance](https://learn.microsoft.com/dotnet/desktop/winforms/migration/).
 
 ## Building from source
 
-The project targets **.NET Framework 4.8** and uses Windows Forms.
+Use Visual Studio 2026 with the .NET desktop development workload and a .NET 10 SDK, or build from a Developer Command Prompt:
 
-1. Open [`CountdownClock.sln`](CountdownClock.sln) in Visual Studio.
-2. Select the desired build configuration.
-3. Build the solution.
-4. Copy or edit `EndDate.txt` in the directory from which the executable will be run.
+```text
+dotnet build CountdownClock.sln -c Release
+```
 
-Normal Visual Studio-generated directories and per-user files such as `.vs/`, `bin/`, `obj/`, `*.suo`, and `*.user` are intentionally excluded from version control by [`.gitignore`](.gitignore).
+Normal Visual Studio and SDK-generated directories and per-user files such as `.vs/`, `bin/`, `obj/`, `*.suo`, and `*.user` are intentionally excluded from version control by [`.gitignore`](.gitignore).
+
+### Publishing a Windows executable
+
+A framework-dependent, single-file Windows x64 build can be produced with:
+
+```text
+dotnet publish CountdownClock.vbproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false
+```
+
+That build requires the .NET 10 Desktop Runtime on the target computer. To publish a larger self-contained executable that carries its own .NET runtime, use:
+
+```text
+dotnet publish CountdownClock.vbproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false
+```
+
+`EndDate.txt` remains a separate editable companion file and is copied into the publish directory automatically.
+
+## Prebuilt executable
+
+A prebuilt Windows executable is retained in [`release/`](release/). The executable currently in that directory is the **pre-modernization .NET Framework 4.8 build**, retained for convenience until the modern .NET 10 source is published on Windows. Its accompanying `Countdown Clock.exe.config` belongs only to that .NET Framework build.
+
+Once a .NET 10 build is published, replace the legacy files in `release/` with the new published executable and its `EndDate.txt`; a modern .NET build does not use the old `.exe.config` file. See [`release/README.md`](release/README.md).
 
 ## Date calculation
 
@@ -62,7 +83,6 @@ The calculation approach was based on the C# implementation `jwg.cs` from the [d
 ```text
 Countdown-Clock/
 ├── .gitignore
-├── App.config
 ├── Countdown_Clock_screencap.png
 ├── CountdownClock.Designer.vb
 ├── CountdownClock.resx
@@ -71,11 +91,16 @@ Countdown-Clock/
 ├── CountdownClock.vbproj
 ├── EndDate.txt
 ├── LICENSE
-├── My Project/
+├── Program.vb
 ├── README.md
 └── release/
+    ├── Countdown Clock.exe
+    ├── Countdown Clock.exe.config
+    ├── EndDate.txt
     └── README.md
 ```
+
+A separate GitHub Pages site is not required: GitHub renders the screenshot directly in this README.
 
 ## License
 
